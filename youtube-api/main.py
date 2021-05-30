@@ -7,7 +7,7 @@ import os
 # out 5 video links
 
 # Authentication 
-API_KEY = 'AIzaSyCD1OfSfCj1WHqIZhNoqHWzifv-7bmtXHE'
+API_KEY = # add your api key here, removed for safety 
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
 
