@@ -115,6 +115,7 @@ class YTMT:
             self.ytPlaylistID = self.args[len(self.args) - 1] # Obtain the playlist url or id, should always be last arg
         except Exception as Err: 
             outputMsg(3, "There was an error: " + str(Err) + "\nTrigerring exit failure")
+            closeLogFile()
             exit(-1)
         # Check if user gave full url or just a tag
         fullURL = False
@@ -140,6 +141,7 @@ class YTMT:
                 ).execute()
             except Exception as Err: 
                 outputMsg(3, "There was an error: " + str(Err))
+                closeLogFile()
                 exit(-1)
             
             # Obtain videos, add youtu.be shortner and save to an array
@@ -232,6 +234,7 @@ def debugMain():
     obtainCreds(sys.argv[1])
     if API_KEY_YT == None: 
         print("Fatal Error, exiting....")
+        closeLogFile()
         exit(-1)     
     print(API_KEY_YT)
 
