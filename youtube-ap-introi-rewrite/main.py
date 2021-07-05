@@ -1,93 +1,48 @@
 #!/usr/bin/python
+from typing import NewType, Sequence
 from googleapiclient.discovery import build
-
+from library import Logging as LOGGING
 # Built in libraries
-import time
 import sys
 import os 
 import subprocess
+import time
 
 
 # Track if previously run
 PREV_RUN = False 
 
-# Program Actions log k
-PROGRAM_FILE = "Program-logFile.txt"
-PROGRAM_LOG = open(PROGRAM_FILE, 'a')
-
 # API Creds for yt
 API_KEY_YT = None
-youtube_q = None  # build('youtube', 'v3', developerKey = API_KEY_YT)
-
-# API Keys for Twitter 
-
-def updateLogFile(): 
-    PROGRAM_LOG.write("\n----------------------------------------------------\n")
-    currTime = time.localtime()
-    timeData = time.strftime("%m-%d-%Y, %H:%M:%S", currTime)
-    PROGRAM_LOG.write("Program running: " + timeData + "\n") 
-    PROGRAM_LOG.write("----------------------------------------------------\n")
-
-def closeLogFile():
-    PROGRAM_LOG.write("\n----------------------------------------------------\n")
-    currTime = time.localtime()
-    timeData = time.strftime("%m-%d-%Y, %H:%M:%S", currTime)
-    PROGRAM_LOG.write("Program finished: " + timeData + "\n") 
-    PROGRAM_LOG.write("----------------------------------------------------\n") 
-    PROGRAM_LOG.close()
-
-
-def outputMsg(outputLoc, message):
-    try: 
-        outputLoc = int(outputLoc)
-    except Exception as Err: 
-        print("Error, incompatible type usage, expecting integer, can not output data: " + str(Err))
-        return 
-
-    if(outputLoc == 1):
-        print(message)
-    elif(outputLoc == 2):
-        PROGRAM_LOG.write(str(message) + "\n")
-    elif(outputLoc == 3): 
-        print(message)
-        PROGRAM_LOG.write(str(message) + "\n")
-    else: 
-        print("Call error, expecting integer from 1 - 3 to display message")
-    
-
-# Obtain Credentials if they exist (do for safety of API keys)
-def obtainCreds(setupFileName = None):
-    if(setupFileName != None and os.path.exists(setupFileName)): 
-        try: 
-            with open(setupFileName, 'r') as fileObj: 
-                fileText = fileObj.readlines()
-                global API_KEY_YT 
-                API_KEY_YT = fileText[0]
-                #youtube_q = build('youtube', 'v3', developerKey= API_KEY_YT)
-        except Exception as Err: 
-            return 
-    else: 
-        outputMsg(3, "API Keys Missing, program may not run properly...")
-    
 
 class YTMT:
     
     def __init__(self, args = None): 
+        self.log = LOGGING.LOGGING("ytdl-log.txt")
         self.ytPlaylistID = None 
         self.ytBuild = None
         self.TAGS = []  # Will hold Tags in the playlist
         self.NEW_TAGS = [] # Will hold new videos if new videos are found
         self.args = args 
         
-    class SETTINGS: # Just a little struct for now, may not need later
-        def __init__(self):
-            self.format = '-f m4a'
-            self.playlist = '--yes-playlist'
-            self.addMetadata = '--add-metadata'
+   
+    
+    # Obtain Credentials if they exist (do for safety of API keys)
+    def obtainCreds(self,setupFileName = None):
         
-        def set(self,format, metaData):
-            self.format = "-f " + str(format)
-            self.addMetadata = bool(metaData)
+        if(setupFileName != None and os.path.exists(setupFileName)): 
+            try: 
+                with open(setupFileName, 'r') as fileObj: 
+                    fileText = fileObj.readlines()
+                    global API_KEY_YT 
+                    API_KEY_YT = fileText[0]
+                    #youtube_q = build('youtube', 'v3', developerKey= API_KEY_YT)
+            except Exception as Err: 
+                return 
+        else: 
+            self.log.output(3, "API Keys Missing, program may not run properly...")
+        
+        return API_KEY_YT
 
 
     def __findTag__(self, url) -> str:
@@ -109,8 +64,8 @@ class YTMT:
             self.ytBuild = build('youtube', 'v3', developerKey= API_KEY_YT) # uncomment when ready to run program
             self.ytPlaylistID = self.args[len(self.args) - 1] # Obtain the playlist url or id, should always be last arg
         except Exception as Err: 
-            outputMsg(3, "There was an error: " + str(Err) + "\nTrigerring exit failure")
-            closeLogFile()
+            self.log.output(3, "There was an error: " + str(Err) + "\nTrigerring exit failure")
+            self.log.closeFile()
             exit(-1)
         # Check if user gave full url or just a tag
         fullURL = False
@@ -135,8 +90,8 @@ class YTMT:
                     pageToken = nxtPageToken
                 ).execute()
             except Exception as Err: 
-                outputMsg(3, "There was an error: " + str(Err))
-                closeLogFile()
+                self.log.output(3, "There was an error: " + str(Err))
+                self.log.closeFile()
                 exit(-1)
             
             # Obtain videos, add youtu.be shortner and save to an array
@@ -149,7 +104,7 @@ class YTMT:
                 # Grab the next page token 
                 nxtPageToken = ytResponse['nextPageToken']
             except Exception as Err: # If a next page token was not found, it is the end of the playlist
-                outputMsg(3, "End of playlist, saving....")
+                self.log.output(3, "End of playlist, saving....")
                 return 
     
 
@@ -178,7 +133,7 @@ class YTMT:
         
         # If new data was found then append to original file 
         if len(self.NEW_TAGS) != 0: 
-            outputMsg(3, "New Videos Found, updating manifest...")
+            self.log.output(3, "New Videos Found, updating manifest...")
             with open(ORIG_FILE, 'a') as FILE_OBJ:
                 FILE_OBJ.write("\n")
                 for items in self.NEW_TAGS:
@@ -189,22 +144,25 @@ class YTMT:
     # If a file is already present it will create a second log file, and see if there were any new videos added from prev run 
     def createManifest(self): 
         
-        DATA_FILE_ORIG = "log.txt" 
-        DATA_FILE_SECOND = "log2.txt"
+        DATA_FILE_ORIG = "Vid-manifest.txt" 
+        DATA_FILE_SECOND = "vid-manifest2.txt"
 
 
         if os.path.exists(DATA_FILE_ORIG): 
             global PREV_RUN # Tell the program that it was run previously -> may affect how things run later on
             PREV_RUN = True
+            self.log.output(3, "This program was previously ran, now creating secondary file for comparison....")
 
         if PREV_RUN == False: 
             with open(DATA_FILE_ORIG, 'w') as fileObjOne: 
                 for items in self.TAGS:
                     fileObjOne.write(str(items) + "\n")
+            self.log.output(3, "New Manifest Created...")
         else: 
             with open(DATA_FILE_SECOND, 'w') as fileObjTwo: 
                 for items in self.TAGS: 
                     fileObjTwo.write(str(items) + "\n")
+            
         
 
         if PREV_RUN: # Check for Diffs, and append diff to original storage file -> linear search, maybe implement AVL tree later
@@ -214,52 +172,83 @@ class YTMT:
             try: 
                 if os.path.exists(os.getcwd() + "/" + DATA_FILE_SECOND): 
                     os.remove(os.getcwd() + "/" + DATA_FILE_SECOND)
-                    outputMsg(3, DATA_FILE_SECOND + "deleted...")
+                    self.log.output(3, DATA_FILE_SECOND + " deleted...")
             except Exception as Err: 
-                outputMsg(3, "There was an error: " + str(Err))
+                self.log.output(3, "There was an error: " + str(Err))
+        else: 
+            self.NEW_TAGS = self.TAGS
 
+
+          
+    def download(self): 
+        cntr = 0 
+        
+        # Create the template for downloading
+        original = "/usr/local/bin/youtube-dl" + " "
+        for i in range(len(self.args) - 1): 
+            if cntr > 1: 
+                original += self.args[i] + " "
+            else: 
+                cntr += 1
+        
+        print(original)
+
+        self.log.output(2, "New Items Count = " + str(len(self.NEW_TAGS)))
+        
+        print("New Itmes Count = " + str(len(self.NEW_TAGS)))
+        time.sleep(2.5)
+
+        tracker = 0 
+        for tags in self.NEW_TAGS: 
+            tracker += 1
+            cmd = original + " " + str(tags)
+            print("Downloading Item Number: " + str(tracker) + " of " + str(len(self.NEW_TAGS)))
+            run = subprocess.call(cmd, shell=True)
+            if run != 0: 
+                self.log.output(3, "There was an error downloading item tag: " + str(tags) + "\nError Code ---> " + str(run))
             
             
+        if not os.path.exists("youtube-dl-playlist"): 
+            os.mkdir("youtube-dl-playlist")
+        
+        cmd2 = "mv *.m4a youtube-dl-playlist"
+        subprocess.call(cmd2, shell=True)
 
-
-def debugMain(): 
-    print("There's Nothing Here, LUUUL")
-    
-    print(sys.argv[1])
-    obtainCreds(sys.argv[1])
-    if API_KEY_YT == None: 
-        print("Fatal Error, exiting....")
-        closeLogFile()
-        exit(-1)     
-    print(API_KEY_YT)
+        # End Program 
+        self.log.closeFile()
+        
 
     
-    outputMsg(3, "Now instantiating class function...")
-    youtubeDL = YTMT(sys.argv)
-    youtubeDL.setup()
-    outputMsg(3, "Now fetching data...")
-    youtubeDL.fetchData()
-    outputMsg(3, "Now creating youtube data manifest...")
-    youtubeDL.createManifest()
-    outputMsg(3, "Manifest Created...")
-
-
-    
-
-
 def main(): 
-    print("There's Nothing here also, luuul")
+    print("Program Beginning, please wait...")
+
+    if sys.argv[1] != "keys.txt": 
+        print("Error, No API KEYS Given, program cannot run properly")
+        print("Error Usage: python3 main.py <API_KEY_FILE_NAME> <list of args> <youtube playlist url> ")
+        exit(-1)
     
-    # Step 1: Obtain creds if they exist
-    obtainCreds(sys.argv[1])
+    # Instantiate Class YTMT
+    youtubeDL = YTMT(sys.argv)
 
-
+    # Obtain API KEY
+    key = youtubeDL.obtainCreds(sys.argv[1])
+    if key == None: 
+        print("Fatal Error, was not able to obtain API Keys from provided file: ", str(sys.argv[1]))
+        exit(-1)
+    
+    # Run Setup 
+    youtubeDL.setup()
+    # Fetch All Videos from Playlist
+    youtubeDL.fetchData()
+    # Create long-term storage file to hold fetched id's 
+    youtubeDL.createManifest()
+    # Begin Downloading Videos
+    print("Now Downloading, please wait....")
+    youtubeDL.download()
 
 
 
 if __name__ == '__main__': 
-    obtainCreds('keys.txt')
-    updateLogFile() # Begin Logging When program starts
-    debugMain() # main()
-    closeLogFile() # End logging
-    #main()
+    main()
+    #debugMain() # main()
+    
