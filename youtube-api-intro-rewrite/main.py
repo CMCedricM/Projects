@@ -184,7 +184,10 @@ class YTMT:
         cntr = 0 
         
         # Create the template for downloading
-        original = "/usr/local/bin/youtube-dl" + " "
+        with open(".paths.txt", mode='r') as file: 
+            data = file.readlines()
+        
+        original = str(data[0]) + " "
         for i in range(len(self.args) - 1): 
             if cntr > 1: 
                 original += self.args[i] + " "
