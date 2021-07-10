@@ -5,14 +5,17 @@ pathFiles = ".paths.txt"
 
 
 def main(): 
-    print("This script will setup your SERVER to use the youtube playlist monitor; this setup script WILL REQUIRE SUDO privileges.")
-    print("This setup script will download dependencies needed to run the program, along with generate entry for your server's CRONTAB tool to run at designated times.")
+    print("This script will setup your SERVER to use the youtube playlist monitor, you will be required \nto append the outputted command to your CRONTAB file yourself.")
+    print("Instructions to place the outputted command into crontab will be placed in the README.txt file in this program's directory.\n")
+    print("This setup script will download dependencies needed to run the program, along with generate entry for your \nserver's CRONTAB tool to run at designated times.")
     
-    response=input("Do you agree for the above to be done on your server? (y/N)")
+    response=input("Do you agree for the above to be done on your server? (y/N): ")
     if response == 'y' or response == 'Y': 
-        print("You have agreeed to let this setup script use sudo privileges to configure the program.")
-        setup()
+        print("\nYou have agreed to let this setup script download pip packages: \n\ngoogle-api-python-client\ngoogle-auth-httplib2\ngoogle-auth-oauthlib\n")
+        # setup()
+        exit(0)
     else: 
+        print("You chose not to allow this setup script to run, exiting...")
         exit(0) 
 
     

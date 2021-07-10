@@ -183,25 +183,47 @@ class YTMT:
     def download(self): 
         cntr = 0 
         
-        # Create the template for downloading
-        with open(".paths.txt", mode='r') as file:
-            data = file.read().splitlines()
+        # Get path for youtube-dl 
+        cmd2 = "which youtube-dl"
+        YOUTUBE_DL_PATH = subprocess.check_output(cmd2, shell=True, universal_newlines=True)
+        if YOUTUBE_DL_PATH == None: 
+            print("Could not find youtube-dl path")
+            exit(-1)
+    
+        # Remove newline character, as it causes an issue with appending args
+        path = ""
+        for chars in YOUTUBE_DL_PATH: 
+            if chars == "\n": 
+                path+= ""
+            else: 
+                path+=chars
+
+        # Set the youtube-dl path now
+        YOUTUBE_DL_PATH = path
+
+        # Debug path print, remove when finished 
+        print("Path of youtube-dl is: " + str(YOUTUBE_DL_PATH)) 
         
-        original = str(data[0]) + " "
+        # Append the arguments to the youtube-dl path
+        original = YOUTUBE_DL_PATH + " "
         for i in range(len(self.args) - 1): 
             if cntr > 1: 
                 original += self.args[i] + " "
             else: 
                 cntr += 1
         
+        
+        # Debug print the template for downloading 
         print(original)
 
+        # Log the amount of data found
         self.log.output(2, "New Items Count = " + str(len(self.NEW_TAGS)))
         
         print("New Itmes Count = " + str(len(self.NEW_TAGS)))
+        # Give the viewer time to see the new items found count
         time.sleep(2.5)
 
-        tracker = 0 
+        tracker = 0 # Helps with visual progress tracking
         for tags in self.NEW_TAGS: 
             tracker += 1
             cmd = original + " " + str(tags)
@@ -215,6 +237,7 @@ class YTMT:
         if not os.path.exists("youtube-dl-playlist"): 
             os.mkdir("youtube-dl-playlist")
         
+        # Now move all downloaded music to the youtube-dl-playlist folder 
         cmd2 = "mv *.m4a youtube-dl-playlist"
         subprocess.call(cmd2, shell=True)
 
