@@ -184,8 +184,8 @@ class YTMT:
         cntr = 0 
         
         # Create the template for downloading
-        with open(".paths.txt", mode='r') as file: 
-            data = file.readlines()
+        with open(".paths.txt", mode='r') as file:
+            data = file.read().splitlines()
         
         original = str(data[0]) + " "
         for i in range(len(self.args) - 1): 
@@ -206,6 +206,7 @@ class YTMT:
             tracker += 1
             cmd = original + " " + str(tags)
             print("Downloading Item Number: " + str(tracker) + " of " + str(len(self.NEW_TAGS)))
+            print(cmd)
             run = subprocess.call(cmd, shell=True)
             if run != 0: 
                 self.log.output(3, "There was an error downloading item tag: " + str(tags) + "\nError Code ---> " + str(run))
