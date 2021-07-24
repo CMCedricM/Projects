@@ -27,7 +27,7 @@ def setup():
             print("Ok then, previous settings are still saved, setup will exit now, no files lost...")
             exit(0)
         else: 
-            print("The previouis setup will be overwritten then, continuing setup program...")
+            print("The previous setup will be overwritten then, continuing setup program...")
 
     cmd1 =  "pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib"
     status = subprocess.call(cmd1, shell=True)
@@ -48,7 +48,6 @@ def setup():
 
 def obtainArgs(): 
 
-    
 
     arguments = input("Enter Custom Choices to run youtube-dl (i.e. -f mp4 --add-metadata): ")
     valid = False 
@@ -112,7 +111,6 @@ def scheduleCreation():
             finalDays += days[i]
             if i + 1 < len(days): 
                 finalDays += ","
-
     else: 
         finalDays = days[0]
 
