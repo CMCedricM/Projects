@@ -21,6 +21,14 @@ def main():
 
     
 def setup(): 
+    if os.path.exists(pathFiles): 
+        ans = input("This is not the first time running setup, would you like to overwrite the old setup? (y/N): ")
+        if ans == 'N' or ans == 'n': 
+            print("Ok then, previous settings are still saved, setup will exit now, no files lost...")
+            exit(0)
+        else: 
+            print("The previouis setup will be overwritten then, continuing setup program...")
+
     cmd1 =  "pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib"
     status = subprocess.call(cmd1, shell=True)
     if status != 0: 
@@ -39,6 +47,9 @@ def setup():
 
 
 def obtainArgs(): 
+
+    
+
     arguments = input("Enter Custom Choices to run youtube-dl (i.e. -f mp4 --add-metadata): ")
     valid = False 
 
@@ -105,8 +116,28 @@ def scheduleCreation():
     else: 
         finalDays = days[0]
 
+    if not os.path.exists("Vid-manifest.txt"): 
+        print("The download program must run, before setup can be complete, if you do not run this program now, then it may not work correctly. ")
+        ans = input("\n Run the program now? (Y/n): ")
+        if ans == 'Y' or ans == 'y': 
+            print("Will run program...")
+        else: 
+            print("Will not run program, undoing installation....")
+            os.remove(pathFiles)
+            exit(-1)
+        
+        cmd = "python3 " + os.getcwd() + "/run.py"
+        ret = os.system(cmd)
 
-    print("Crontab entry is: " + str (getMin) + " " + str(getHour) + " * * " +  str(finalDays) + " " + str(os.getcwd()) + "/run.py"  )
+        if ret != 0: 
+            print("Fatal error, this program was not able to run, exiting...")
+            os.remove(pathFiles)
+            exit(-1)
+        else: 
+            print("Program Execution Successful, now making your schedule entry...")
+        
+
+    print("\n\nCrontab entry is: " + str (getMin) + " " + str(getHour) + " * * " +  str(finalDays) + " " + str(os.getcwd()) + "/run.py\n"  )
 
 
 
