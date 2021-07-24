@@ -23,7 +23,7 @@ def main():
 def setup(): 
     if os.path.exists(pathFiles): 
         ans = input("This is not the first time running setup, would you like to overwrite the old setup? (y/N): ")
-        if ans == 'N' or ans == 'n': 
+        if ans != 'Y' or ans != 'y': 
             print("Ok then, previous settings are still saved, setup will exit now, no files lost...")
             exit(0)
         else: 
