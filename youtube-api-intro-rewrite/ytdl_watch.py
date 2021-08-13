@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from typing import NewType, Sequence
+#from typing import NewType, Sequence
 from googleapiclient.discovery import build
 from library import Logging as LOGGING
 # Built in libraries
@@ -18,7 +18,7 @@ API_KEY_YT = None
 class YTMT:
     
     def __init__(self, args = None): 
-        self.log = LOGGING.LOGGING("ytdl-log.txt")
+        self.log = LOGGING.LOGGING(os.path.join(os.path.dirname(__file__),"ytdl-log.txt"))
         self.ytPlaylistID = None 
         self.ytBuild = None
         self.TAGS = []  # Will hold Tags in the playlist
@@ -29,8 +29,9 @@ class YTMT:
     
     # Obtain Credentials if they exist (do for safety of API keys)
     def obtainCreds(self,setupFileName = None):
-        
-        if(setupFileName != None and os.path.exists(setupFileName)): 
+        #print(os.path.join(os.getcwd(), setupFileName))
+        if(setupFileName != None and os.path.exists(os.path.join(os.path.dirname(__file__),setupFileName))): 
+            setupFileName = os.path.join(os.path.dirname(__file__),setupFileName)
             try: 
                 with open(setupFileName, 'r') as fileObj: 
                     fileText = fileObj.readlines()
@@ -38,14 +39,15 @@ class YTMT:
                     API_KEY_YT = fileText[0]
                     #youtube_q = build('youtube', 'v3', developerKey= API_KEY_YT)
             except Exception as Err: 
-                return 
+                print("Error Usage: python3 main.py <API_KEY_FILE_NAME> <list of args> <youtube playlist url> ")
+                exit(-1) 
         else: 
             self.log.output(3, "API Keys Missing, program may not run properly...")
         
         return API_KEY_YT
 
 
-    def __findTag__(self, url) -> str:
+    def __findTag__(self, url):
         tag = ""
         record = False 
         
@@ -144,8 +146,8 @@ class YTMT:
     # If a file is already present it will create a second log file, and see if there were any new videos added from prev run 
     def createManifest(self): 
         
-        DATA_FILE_ORIG = "Vid-manifest.txt" 
-        DATA_FILE_SECOND = "vid-manifest2.txt"
+        DATA_FILE_ORIG = os.path.join(os.path.dirname(__file__),"Vid-manifest.txt")
+        DATA_FILE_SECOND = os.path.join(os.path.dirname(__file__),"Vid-manifest2.txt") 
 
 
         if os.path.exists(DATA_FILE_ORIG): 
@@ -170,39 +172,31 @@ class YTMT:
             
             # Remove temp log (.log2.txt)
             try: 
-                if os.path.exists(os.getcwd() + "/" + DATA_FILE_SECOND): 
-                    os.remove(os.getcwd() + "/" + DATA_FILE_SECOND)
+                if os.path.exists(DATA_FILE_SECOND): 
+                    os.remove(DATA_FILE_SECOND)
                     self.log.output(3, DATA_FILE_SECOND + " deleted...")
             except Exception as Err: 
                 self.log.output(3, "There was an error: " + str(Err))
         else: 
             self.NEW_TAGS = self.TAGS
-
-
+        
+        self.log.output(3,"Diff check complete")
+        
           
     def download(self): 
         cntr = 0 
-        
-        # Get path for youtube-dl 
-        cmd2 = "which youtube-dl"
-        YOUTUBE_DL_PATH = subprocess.check_output(cmd2, shell=True, universal_newlines=True)
-        if YOUTUBE_DL_PATH == None: 
-            print("Could not find youtube-dl path")
-            exit(-1)
-    
-        # Remove newline character, as it causes an issue with appending args
-        path = ""
-        for chars in YOUTUBE_DL_PATH: 
-            if chars == "\n": 
-                path+= ""
-            else: 
-                path+=chars
-
+        self.log.output(3,"Setting Up Download")     
         # Set the youtube-dl path now
-        YOUTUBE_DL_PATH = path
+        YOUTUBE_DL_PATH = "/snap/bin/youtube-dl" #subprocess.check_output("which youtube-dl", shell=True, universal_newlines=True)
+        '''
+        if YOUTUBE_DL_PATH == None:
+            print("Youtube-dl path not found error")
+        else: 
+            YOUTUBE_DL_PATH=str(YOUTUBE_DL_PATH).strip()
+        '''
 
         # Debug path print, remove when finished 
-        print("Path of youtube-dl is: " + str(YOUTUBE_DL_PATH)) 
+        self.log.output(3,"Path of youtube-dl is: " + str(YOUTUBE_DL_PATH)) 
         
         # Append the arguments to the youtube-dl path
         original = YOUTUBE_DL_PATH + " "
@@ -233,12 +227,14 @@ class YTMT:
             if run != 0: 
                 self.log.output(3, "There was an error downloading item tag: " + str(tags) + "\nError Code ---> " + str(run))
             
-            
-        if not os.path.exists("youtube-dl-playlist"): 
-            os.mkdir("youtube-dl-playlist")
+        
+        playlistFolder = os.path.join(os.path.dirname(__file__),"youtube-dl-playlist")
+        if not os.path.exists(playlistFolder): 
+           print("Making Playlist Folder")
+           os.mkdir(playlistFolder)
         
         # Now move all downloaded music to the youtube-dl-playlist folder 
-        cmd2 = "mv *.m4a youtube-dl-playlist"
+        cmd2 = "mv *.m4a " + playlistFolder
         subprocess.call(cmd2, shell=True)
 
         # End Program 
@@ -248,20 +244,15 @@ class YTMT:
     
 def main(): 
     print("Program Beginning, please wait...")
-
-    if sys.argv[1] != "keys.txt": 
-        print("Error, No API KEYS Given, program cannot run properly")
-        print("Error Usage: python3 main.py <API_KEY_FILE_NAME> <list of args> <youtube playlist url> ")
-        exit(-1)
+   # if sys.argv[1] != os.path.join(os.path.dirname(__file__),"keys.txt"): 
+    #    print("Error, No API KEYS Given, program cannot run properly")
+        
     
     # Instantiate Class YTMT
     youtubeDL = YTMT(sys.argv)
 
     # Obtain API KEY
     key = youtubeDL.obtainCreds(sys.argv[1])
-    if key == None: 
-        print("Fatal Error, was not able to obtain API Keys from provided file: ", str(sys.argv[1]))
-        exit(-1)
     
     # Run Setup 
     youtubeDL.setup()
