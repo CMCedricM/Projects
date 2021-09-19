@@ -176,7 +176,7 @@ int main(int argc, char **argv){
     //Get the Directory To Start Exploring
     bool badAnswer = true; 
     while(badAnswer){
-        std::cout<<"Enter the Desired Folder To Search: "; 
+        std::cout<<"Enter the Desired Folder To Search (only accepts a folder name, i.e. Pics) : "; 
         std::cin>>directoryToExplore; 
         //Append
         directoryNameStr += "/" + directoryToExplore;
@@ -201,7 +201,7 @@ int main(int argc, char **argv){
     badAnswer = true; 
     std::string directOut = " "; 
     while(badAnswer){
-        std::cout<<"Enter Destination Folder: "; 
+        std::cout<<"Enter Destination Folder (only accepts a folder name, i.e.: Pics): "; 
         std::cin>>directOut; 
         //Append 
         directoryNameStr += "/" + directOut; 
